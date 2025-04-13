@@ -1,0 +1,87 @@
+<!-- templates/revenue.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Total Revenue</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .revenue-box, .average-box {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .revenue-box {
+            color: #1e90ff;
+        }
+
+        .average-box {
+            color: #28a745;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 2rem;
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background-color: #0f78d1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Total Revenue Collected</h1>
+        <div class="revenue-box" id="revenue-amount">Loading...</div>
+       
+        <div style="text-align: center;">
+            <a class="btn" href="/">Go Back</a>
+        </div>
+    </div>
+
+    <script>
+        // Fetch total revenue
+        fetch("/api/total-payment-collected")
+            .then(response => response.json())
+            .then(data => {
+                const amount = data[0].total_payment_collected || 0;
+                document.getElementById("revenue-amount").innerText = "₹ " + amount;
+            })
+            .catch(err => {
+                document.getElementById("revenue-amount").innerText = "Error fetching revenue";
+                console.error("Fetch error (revenue):", err);
+            });
+
+        
+    </script>
+</body>
+</html>
+

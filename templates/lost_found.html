@@ -1,0 +1,154 @@
+<!-- templates/lost_found.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lost and Found</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9fafb;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        .search-bar {
+            margin: 1.5rem 0;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-bar input, .search-bar select {
+            padding: 0.5rem;
+            flex: 1;
+        }
+
+        .search-bar button {
+            padding: 0.5rem 1rem;
+            background-color: #1e90ff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .item {
+            border-bottom: 1px solid #ddd;
+            padding: 1rem 0;
+        }
+
+        .item:last-child {
+            border-bottom: none;
+        }
+
+        .item-header {
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .go-back {
+            display: inline-block;
+            margin-top: 2rem;
+            text-align: center;
+            text-decoration: none;
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .go-back:hover {
+            background-color: #0f78d1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lost and Found Portal</h1>
+
+        <div class="search-bar">
+            <input type="text" id="search" placeholder="Search description...">
+            <select id="floor">
+                <option value="">All Floors</option>
+                <option value="1">Floor 1</option>
+                <option value="2">Floor 2</option>
+                <option value="3">Floor 3</option>
+                <option value="4">Floor 4</option>
+            </select>
+            <button onclick="searchItems()">Search</button>
+        </div>
+
+        <div id="results">Loading unclaimed items...</div>
+
+        <div style="text-align: center;">
+            <a class="go-back" href="/">Go Back</a>
+        </div>
+    </div>
+
+    <script>
+        function renderItems(items) {
+            const resultsDiv = document.getElementById("results");
+            resultsDiv.innerHTML = "";
+            if (items.length === 0) {
+                resultsDiv.innerText = "No items found.";
+                return;
+            }
+
+            items.forEach(item => {
+                const el = document.createElement("div");
+                el.classList.add("item");
+                el.innerHTML = `
+                    <div class="item-header">Item ID: ${item.item_id}</div>
+                    <div><strong>Description:</strong> ${item.description}</div>
+                    <div><strong>Floor:</strong> ${item.floor_id}</div>
+                    <div><strong>Coordinates:</strong> (${item.found_at_coord_x}, ${item.found_at_coord_y})</div>
+                    ${item.claimed !== undefined ? `<div><strong>Claimed:</strong> ${item.claimed ? "Yes" : "No"}</div>` : ""}
+                `;
+                resultsDiv.appendChild(el);
+            });
+        }
+
+        function loadUnclaimed() {
+            fetch("/api/lost-found-not-claimed-yet")
+                .then(res => res.json())
+                .then(data => renderItems(data))
+                .catch(err => {
+                    document.getElementById("results").innerText = "Error loading data.";
+                    console.error(err);
+                });
+        }
+
+        function searchItems() {
+            const description = document.getElementById("search").value;
+            const floor = document.getElementById("floor").value;
+            const params = new URLSearchParams();
+
+            if (description) params.append("description", description);
+            if (floor) params.append("floor_id", floor);
+
+            fetch(`/api/find-item?${params.toString()}`)
+                .then(res => res.json())
+                .then(data => renderItems(data))
+                .catch(err => {
+                    document.getElementById("results").innerText = "Error searching items.";
+                    console.error(err);
+                });
+        }
+
+        // Load default data on page load
+        loadUnclaimed();
+    </script>
+</body>
+</html>

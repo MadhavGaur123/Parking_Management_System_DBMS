@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>📊 Parking Analytics</title>
+  <style>
+    @keyframes fadeSlideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+      animation: fadeSlideIn 0.5s ease forwards;
+      opacity: 0;
+    }
+
+    .card.show { opacity: 1; }
+    .card.hide { animation: fadeOut 0.4s ease forwards; }
+
+    @keyframes fadeOut {
+      to { opacity: 0; transform: scale(0.9); }
+    }
+
+    :root {
+      --bg: #f7f9fc;
+      --text: #333;
+      --card: #ffffff;
+      --header: #004080;
+      --button: #004080;
+      --button-hover: #0059b3;
+    }
+
+    body.dark {
+      --bg: #1e1e2f;
+      --text: #f0f0f0;
+      --card: #2c2c3e;
+      --header: #22223b;
+      --button: #44446b;
+      --button-hover: #5a5a8c;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    header {
+      background-color: var(--header);
+      color: white;
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    .toggle {
+      cursor: pointer;
+      padding: 10px 20px;
+      background: #fff;
+      color: var(--header);
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .section {
+      margin-bottom: 40px;
+    }
+
+    button.load-btn {
+      padding: 10px 25px;
+      background-color: var(--button);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-bottom: 10px;
+    }
+
+    button.load-btn:hover {
+      background-color: var(--button-hover);
+    }
+
+    .result {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+
+    .card {
+      background-color: var(--card);
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      flex: 1 1 300px;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    .card strong {
+      color: var(--button);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      color: red;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📊 Parking Analytics Dashboard</h1>
+    <button class="toggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+  </header>
+
+  <div class="container">
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('totalCars', '/api/total-cars-parked', formatTotalCars)">🚗 Total Cars Parked</button>
+      <div id="totalCars" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('maxParked', '/api/max-parked', formatMaxParked)">⏱️ Longest Parked Car(s)</button>
+      <div id="maxParked" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('floorCounts', '/api/floor-count', formatFloorCounts)">📶 Active Cars Per Floor</button>
+      <div id="floorCounts" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('longParked', '/api/long-parked/24', formatLongParked)">⏳ Cars Parked Over 24 Hours</button>
+      <div id="longParked" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('spotUsage', '/api/parking-spots-data', formatSpotUsage)">🅿️ Spot Usage Frequency</button>
+      <div id="spotUsage" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('updatedSpots', '/api/mark-spots-as-occupied', formatUpdatedSpots)">📍 Sync Occupied Spots</button>
+      <div id="updatedSpots" class="result"></div>
+    </div>
+    
+
+    <div class="section">
+      <div id="findCarContainer">
+        <button class="load-btn" onclick="showCarInput()">📍 Find Car Location</button>
+      </div>
+      <div id="carLocation" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('unoccupiedSpots', '/api/unoccupied-parking-spots', formatUnoccupiedSpots)">🔓 Unoccupied Parking Spots</button>
+      <div id="unoccupiedSpots" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('avgParkingTime', '/api/average-parking-time', formatAverageParkingTime)">⏱️ Average Parking Time</button>
+      <div id="avgParkingTime" class="result"></div>
+    </div>
+
+    <div class="section">
+      <button class="load-btn" onclick="loadAndShow('avgPayment', '/api/avg-payment', formatAveragePayment)">💰 Average Payment Per Car</button>
+      <div id="avgPayment" class="result"></div>
+    </div>
+
+    
+    <!-- Replace these sections in your HTML -->
+
+<!-- Lost Item Section -->
+<div class="section">
+  <div id="lostItemFormContainer">
+    <button class="load-btn" onclick="showLostItemForm()">➕ Report Lost Item</button>
+    <div id="lostItemForm" style="margin-top: 10px;"></div>
+  </div>
+  <div id="lostItemMessage" class="result"></div>
+</div>
+
+<!-- Claim Item Section -->
+<div class="section">
+  <div id="claimItemFormContainer">
+    <button class="load-btn" onclick="showClaimItemForm()">✔️ Claim Lost Item</button>
+    <div id="claimItemForm" style="margin-top: 10px;"></div>
+  </div>
+  <div id="claimItemMessage" class="result"></div>
+</div>
+
+<!-- Park Car Section -->
+<div class="section">
+  <div id="parkCarFormContainer">
+    <button class="load-btn" onclick="showParkCarForm()">🅿️ Park a Car</button>
+    <div id="parkCarForm" style="margin-top: 10px;"></div>
+  </div>
+  <div id="parkCarMessage" class="result"></div>
+</div>
+
+<!-- Exit Car Section -->
+<div class="section">
+  <div id="exitCarFormContainer">
+    <button class="load-btn" onclick="showExitCarForm()">🚪 Exit a Car</button>
+    <div id="exitCarForm" style="margin-top: 10px;"></div>
+  </div>
+  <div id="exitCarMessage" class="result"></div>
+</div>
+
+
+<div class="section">
+  <button class="load-btn" onclick="loadAndShow('spotDuration', '/api/spot-occupancy-duration', formatSpotDuration)">🕒 Spot Occupancy Duration</button>
+  <div id="spotDuration" class="result"></div>
+</div>
+
+
+  <script>
+
+function formatSpotDuration(data) {
+  if (!data || data.length === 0) {
+    return `<div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>No occupancy data found.</div>`;
+  }
+
+  return data.map(item => `
+    <div class="card show">
+      <button class="close-btn" onclick="fadeRemove(this)">×</button>
+      <strong>Car ID:</strong> ${item.car_id}<br>
+      <strong>License:</strong> ${item.license_plate}<br>
+      <strong>Entry Time:</strong> ${item.entry_time}<br>
+      <strong>Floor:</strong> ${item.floor_number}<br>
+      <strong>Spot ID:</strong> ${item.spot_id}<br>
+      <strong>Duration:</strong> ${item.duration_minutes} minutes
+    </div>
+  `).join("");
+}
+
+function showLostItemForm() {
+  const formDiv = document.getElementById("lostItemForm");
+  formDiv.innerHTML = `
+    <div style="display: flex; flex-wrap: wrap; gap: 5px; align-items: center;">
+      <input id="lostFloor" type="number" placeholder="Floor ID" style="padding:10px;border-radius:6px;">
+      <input id="lostX" type="number" placeholder="X Coordinate" style="padding:10px;border-radius:6px;">
+      <input id="lostY" type="number" placeholder="Y Coordinate" style="padding:10px;border-radius:6px;">
+      <input id="lostDesc" type="text" placeholder="Description" style="padding:10px;border-radius:6px;width:250px;">
+      <button class="load-btn" onclick="submitLostItem()">📨 Submit</button>
+    </div>
+  `;
+}
+
+function showClaimItemForm() {
+  const formDiv = document.getElementById("claimItemForm");
+  formDiv.innerHTML = `
+    <div style="display: flex; gap: 5px; align-items: center;">
+      <input id="claimItemId" type="number" placeholder="Enter Lost Item ID" style="padding:10px;border-radius:6px;">
+      <button class="load-btn" onclick="claimItem()">🗃️ Mark as Claimed</button>
+    </div>
+  `;
+}
+
+function showParkCarForm() {
+  const formDiv = document.getElementById("parkCarForm");
+  formDiv.innerHTML = `
+    <div style="display: flex; gap: 5px; align-items: center;">
+      <input id="parkLicense" type="text" placeholder="License Plate" style="padding:10px;border-radius:6px;">
+      <input id="parkSpot" type="number" placeholder="Spot ID" style="padding:10px;border-radius:6px;">
+      <button class="load-btn" onclick="submitParkCar()">📥 Submit</button>
+    </div>
+  `;
+}
+
+function showExitCarForm() {
+  const formDiv = document.getElementById("exitCarForm");
+  formDiv.innerHTML = `
+    <div style="display: flex; gap: 5px; align-items: center;">
+      <input id="exitCarId" type="number" placeholder="Car ID" style="padding:10px;border-radius:6px;">
+      <button class="load-btn" onclick="submitExitCar()">💸 Exit & Pay</button>
+    </div>
+  `;
+}
+function formatUpdatedSpots(data) {
+  console.log("Data received from API:", data);  // 🔍 Debugging line
+
+  if (!data || data.length === 0) {
+    return `<div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>No parking spot data available.</div>`;
+  }
+
+  return data.map(spot => `
+    <div class="card show">
+      <button class="close-btn" onclick="fadeRemove(this)">×</button>
+      <strong>Spot ID:</strong> ${spot.spot_id}<br>
+      <strong>Floor:</strong> ${spot.floor_id}<br>
+      <strong>Coordinates:</strong> (${spot.x_coord}, ${spot.y_coord})<br>
+      <strong>Occupied:</strong> ${spot.is_occupied ? "✅ Yes" : "❌ No"}
+    </div>
+  `).join("");
+}
+
+function toggleDarkMode() {
+      document.body.classList.toggle('dark');
+    }
+
+    function loadAndShow(id, url, formatter) {
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "card show";
+          wrapper.innerHTML = `<button class="close-btn" onclick="fadeRemove(this)">×</button>${formatter(data)}`;
+          const resultArea = document.getElementById(id);
+          resultArea.innerHTML = '';
+          resultArea.appendChild(wrapper);
+        });
+    }
+
+    function fadeRemove(btn) {
+      const card = btn.parentElement;
+      card.classList.remove("show");
+      card.classList.add("hide");
+      setTimeout(() => card.remove(), 400);
+    }
+
+    function formatTotalCars(data) {
+      const count = data[0]?.total_cars_parked || 0;
+      return `<strong>${count}</strong> cars parked Till Now.`;
+    }
+
+    function formatMaxParked(data) {
+      return data.map(c => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          <strong>License:</strong> ${c.license_plate}<br>
+          <strong>Hours Parked:</strong> ${c.hours_parked}<br>
+          <strong>Entry Time:</strong> ${c.entry_time}
+        </div>`).join("");
+    }
+
+    function formatFloorCounts(data) {
+      return data.map(f => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          Floor <strong>${f.floor_number}</strong>: ${f.active_cars} active cars
+        </div>`).join("");
+    }
+
+    function formatLongParked(data) {
+      return data.map(f => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          Floor <strong>${f.floor_number}</strong>: ${f.active_cars_over_hour} cars over 24h
+        </div>`).join("");
+    }
+
+    function formatSpotUsage(data) {
+      return data.map(s => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          Spot <strong>${s.spot_id}</strong> (Floor ${s.floor_id}) — ${s.total_uses} uses
+        </div>`).join("");
+    }
+
+    function formatBusyFloors(data) {
+      return data.map(f => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          Floor <strong>${f.floor_number}</strong> — ${f.car_count} cars
+        </div>`).join("");
+    }
+
+    function showCarInput() {
+      document.getElementById("findCarContainer").innerHTML = `
+        <input id="carIdInput" type="number" placeholder="Enter Car ID" 
+          style="padding: 10px; font-size: 14px; border-radius: 6px; border: 1px solid #ccc; margin-right: 10px;">
+        <button class="load-btn" onclick="findCarLocation()">🔍 Search</button>
+      `;
+    }
+
+    function findCarLocation() {
+      const carId = document.getElementById("carIdInput").value;
+      const resultArea = document.getElementById("carLocation");
+      resultArea.innerHTML = '';
+
+      if (!carId) {
+        alert("Please enter a Car ID.");
+        return;
+      }
+
+      fetch(`/api/find-car-location/${carId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.length === 0) {
+            resultArea.innerHTML = `<div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>No location found for Car ID ${carId}</div>`;
+            return;
+          }
+
+          const card = document.createElement("div");
+          card.className = "card show";
+          card.innerHTML = `
+            <button class="close-btn" onclick="fadeRemove(this)">×</button>
+            <strong>Floor:</strong> ${data[0].floor_number}<br>
+            <strong>X:</strong> ${data[0].x_coord}<br>
+            <strong>Y:</strong> ${data[0].y_coord}
+          `;
+          resultArea.appendChild(card);
+        })
+        .catch(() => {
+          resultArea.innerHTML = `<div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>Error fetching data.</div>`;
+        });
+    }
+
+    function formatUnoccupiedSpots(data) {
+      if (data.length === 0) {
+        return `<div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>No unoccupied spots found.</div>`;
+      }
+
+      return data.map(spot => `
+        <div class="card">
+          <button class="close-btn" onclick="this.parentElement.remove()">×</button>
+          <strong>Spot ID:</strong> ${spot.spot_id}<br>
+          <strong>Floor:</strong> ${spot.floor_id}<br>
+          <strong>Coordinates:</strong> (${spot.x_coord}, ${spot.y_coord})
+        </div>
+      `).join("");
+    }
+
+    function formatAverageParkingTime(data) {
+      const mins = data[0]?.average_duration_minutes;
+      const hours = mins ? Math.floor(mins / 60) : 0;
+      const minutes = mins ? Math.round(mins % 60) : 0;
+      return `<strong>${hours}h ${minutes}m</strong> average parking time per car.`;
+    }
+
+    function formatAveragePayment(data) {
+      const avg = data[0]?.average_payment_per_car || 0;
+      return `<strong>₹${parseFloat(avg).toFixed(2)}</strong> average collected per car.`;
+    }
+
+    function showLostItemForm() {
+      const container = document.getElementById("lostItemFormContainer");
+      container.innerHTML = `
+        <input id="lostFloor" type="number" placeholder="Floor ID" style="padding:10px;margin:5px;border-radius:6px;">
+        <input id="lostX" type="number" placeholder="X Coordinate" style="padding:10px;margin:5px;border-radius:6px;">
+        <input id="lostY" type="number" placeholder="Y Coordinate" style="padding:10px;margin:5px;border-radius:6px;">
+        <input id="lostDesc" type="text" placeholder="Description" style="padding:10px;margin:5px;border-radius:6px;width:250px;">
+        <button class="load-btn" onclick="submitLostItem()">📨 Submit</button>
+      `;
+    }
+
+    function submitLostItem() {
+      const floor_id = document.getElementById("lostFloor").value;
+      const x_coord = document.getElementById("lostX").value;
+      const y_coord = document.getElementById("lostY").value;
+      const description = document.getElementById("lostDesc").value;
+      const msgBox = document.getElementById("lostItemMessage");
+
+      if (!floor_id || !x_coord || !y_coord || !description) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      fetch('/api/add-lost-item', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ floor_id, x_coord, y_coord, description })
+      })
+      .then(res => res.json())
+      .then(data => {
+        const card = document.createElement("div");
+        card.className = "card show";
+        card.innerHTML = `
+          <button class="close-btn" onclick="fadeRemove(this)">×</button>
+          ${data.message ? `<strong>✅</strong> ${data.message}` : `<strong>⚠️</strong> ${data.error}`}
+        `;
+        msgBox.innerHTML = '';
+        msgBox.appendChild(card);
+      })
+      .catch(err => {
+        msgBox.innerHTML = `
+          <div class="card show">
+            <button class="close-btn" onclick="fadeRemove(this)">×</button>
+            <strong>❌ Error:</strong> ${err.message}
+          </div>
+        `;
+      });
+    }
+
+
+    function showClaimItemForm() {
+  const container = document.getElementById("claimItemFormContainer");
+  container.innerHTML = `
+    <input id="claimItemId" type="number" placeholder="Enter Lost Item ID" style="padding:10px;margin:5px;border-radius:6px;">
+    <button class="load-btn" onclick="claimItem()">🗃️ Mark as Claimed</button>
+  `;
+}
+
+function claimItem() {
+  const itemId = document.getElementById("claimItemId").value;
+  const msgBox = document.getElementById("claimItemMessage");
+  msgBox.innerHTML = '';
+
+  if (!itemId) {
+    alert("Please enter an Item ID.");
+    return;
+  }
+
+  fetch(`/api/claim-item/${itemId}`, {
+    method: 'POST'
+  })
+  .then(res => res.json())
+  .then(data => {
+    const card = document.createElement("div");
+    card.className = "card show";
+    card.innerHTML = `
+      <button class="close-btn" onclick="fadeRemove(this)">×</button>
+      ${data.message ? `<strong>✅</strong> ${data.message}` : `<strong>⚠️</strong> ${data.error}`}
+    `;
+    msgBox.innerHTML = '';
+    msgBox.appendChild(card);
+  })
+  .catch(err => {
+    msgBox.innerHTML = `
+      <div class="card show">
+        <button class="close-btn" onclick="fadeRemove(this)">×</button>
+        <strong>❌ Error:</strong> ${err.message}
+      </div>
+    `;
+  });
+}
+
+
+
+function showParkCarForm() {
+  const container = document.getElementById("parkCarFormContainer");
+  container.innerHTML = `
+    <input id="parkLicense" type="text" placeholder="License Plate" style="padding:10px;margin:5px;border-radius:6px;">
+    <input id="parkSpot" type="number" placeholder="Spot ID" style="padding:10px;margin:5px;border-radius:6px;">
+    <button class="load-btn" onclick="submitParkCar()">📥 Submit</button>
+  `;
+}
+
+function submitParkCar() {
+  const license_plate = document.getElementById("parkLicense").value;
+  const spot_id = document.getElementById("parkSpot").value;
+  const msgBox = document.getElementById("parkCarMessage");
+  msgBox.innerHTML = '';
+
+  if (!license_plate || !spot_id) {
+    alert("Please fill in all fields.");
+    return;
+  }
+
+  fetch('/api/park-car', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ license_plate, spot_id })
+  })
+  .then(res => res.json())
+  .then(data => {
+    const card = document.createElement("div");
+    card.className = "card show";
+    card.innerHTML = `
+      <button class="close-btn" onclick="fadeRemove(this)">×</button>
+      ${data.message ? `<strong>✅</strong> ${data.message}` : `<strong>⚠️</strong> ${data.error}`}
+    `;
+    msgBox.appendChild(card);
+  })
+  .catch(err => {
+    msgBox.innerHTML = `
+      <div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>
+      <strong>❌ Error:</strong> ${err.message}</div>
+    `;
+  });
+}
+
+function showExitCarForm() {
+  const container = document.getElementById("exitCarFormContainer");
+  container.innerHTML = `
+    <input id="exitCarId" type="number" placeholder="Car ID" style="padding:10px;margin:5px;border-radius:6px;">
+    <button class="load-btn" onclick="submitExitCar()">💸 Exit & Pay</button>
+  `;
+}
+
+function submitExitCar() {
+  const car_id = document.getElementById("exitCarId").value;
+  const msgBox = document.getElementById("exitCarMessage");
+  msgBox.innerHTML = '';
+
+  if (!car_id) {
+    alert("Please enter Car ID.");
+    return;
+  }
+
+  fetch(`/api/exit-car/${car_id}`, {
+    method: 'POST'
+  })
+  .then(res => res.json())
+  .then(data => {
+    const card = document.createElement("div");
+    card.className = "card show";
+    card.innerHTML = `
+      <button class="close-btn" onclick="fadeRemove(this)">×</button>
+      ${data.message
+        ? `<strong>✅</strong> ${data.message}<br>⏱️ Duration: ${data.duration_minutes} mins<br>💰 Collected: ₹${data.amount}`
+        : `<strong>⚠️</strong> ${data.error}`
+      }
+    `;
+    msgBox.appendChild(card);
+  })
+  .catch(err => {
+    msgBox.innerHTML = `
+      <div class="card show"><button class="close-btn" onclick="fadeRemove(this)">×</button>
+      <strong>❌ Error:</strong> ${err.message}</div>
+    `;
+  });
+}
+
+
+  </script>
+</body>
+</html>

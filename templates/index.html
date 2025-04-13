@@ -1,0 +1,194 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Car Parking Dashboard</title>
+  <link rel="stylesheet" href="/static/static.css">
+</head>
+<body>
+  <div class="dashboard-container">
+    <h1>🚗 Car Parking Dashboard</h1>
+
+    <div class="grid">
+      <button onclick="fetchData('max-parked')">Max Parked Car</button>
+      <button onclick="fetchData('floor-count')">Cars on Each Floor</button>
+
+      <div class="input-group">
+        <input type="number" id="hours" placeholder="Hours" />
+        <button onclick="fetchLongParked()">Long Parked Cars</button>
+      </div>
+
+      <button onclick="fetchData('avg-payment')">Average Payment</button>
+      <button onclick="fetchData('lost-found-not-claimed-yet')">Unclaimed Items</button>
+      <button onclick="fetchData('total-cars-parked')">Total Cars Parked</button>
+      <button onclick="fetchData('parking-spots-data')">Spot Usage Stats</button>
+      <button onclick="fetchData('cars-on-busy-floors')">Busy Floors</button>
+      <button onclick="updateSpotOccupancy()">Update Spot Occupancy</button>
+      <button onclick="fetchData('unoccupied-parking-spots')">Free Spots</button>
+      <button onclick="fetchData('total-payment-collected')">Total Payment</button>
+      <button onclick="fetchData('spot-occupancy-duration')">Parking Durations</button>
+      <button onclick="fetchData('average-parking-time')">Avg Parking Time</button>
+
+      <div class="input-group">
+        <input type="number" id="car-id" placeholder="Enter Car ID" />
+        <button onclick="findCarLocation()">Find Car</button>
+      </div>
+
+      <div class="input-group">
+        <input type="text" id="item-desc" placeholder="Lost Item Desc" />
+        <input type="number" id="floor-id" placeholder="Floor ID (opt)" />
+        <button onclick="searchLostItems()">Search Lost Item</button>
+      </div>
+    </div>
+
+    <div id="result" class="result-box">Results will appear here...</div>
+
+  </div>
+
+  <script>
+    function fetchData(endpoint) {
+      fetch(`/api/${endpoint}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        })
+        .catch(err => {
+          document.getElementById('result').textContent = `Error: ${err}`;
+        });
+    }
+
+    function fetchLongParked() {
+      const hours = document.getElementById('hours').value;
+      fetch(`/api/long-parked/${hours}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        });
+    }
+
+    function updateSpotOccupancy() {
+      fetch('/api/mark-spots-as-occupied', {
+        method: 'POST'
+      })
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+      })
+      .catch(err => {
+        document.getElementById('result').textContent = `Error: ${err}`;
+      });
+    }
+
+    function findCarLocation() {
+      const carId = document.getElementById('car-id').value;
+      if (!carId) return alert("Please enter a Car ID");
+      fetch(`/api/find-car-location/${carId}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        });
+    }
+
+    function searchLostItems() {
+      const desc = document.getElementById('item-desc').value;
+      const floorId = document.getElementById('floor-id').value;
+      let query = `/api/find-item?description=${encodeURIComponent(desc)}`;
+      if (floorId) query += `&floor_id=${floorId}`;
+      fetch(query)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+        });
+    }
+  </script>
+</body>
+</html>
+<script>
+  function formatData(data) {
+    if (!data || data.length === 0) return "<p>No data available.</p>";
+
+    if (!Array.isArray(data)) {
+      return `<table>
+        <tbody>
+          ${Object.entries(data).map(([k, v]) => `
+            <tr>
+              <th>${k}</th>
+              <td>${v}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    if (typeof data[0] === 'object') {
+      const headers = Object.keys(data[0]);
+      return `<table>
+        <thead>
+          <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+        </thead>
+        <tbody>
+          ${data.map(row => `
+            <tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>
+          `).join('')}
+        </tbody>
+      </table>`;
+    }
+
+    return `<ul>${data.map(item => `<li>${item}</li>`).join('')}</ul>`;
+  }
+</script>
+<script>
+    function formatData(data) {
+      if (!data || data.length === 0) return "<p>No data available.</p>";
+  
+      if (!Array.isArray(data)) {
+        return `<table>
+          <tbody>
+            ${Object.entries(data).map(([k, v]) => `
+              <tr>
+                <th>${k}</th>
+                <td>${v}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+      }
+  
+      if (typeof data[0] === 'object') {
+        const headers = Object.keys(data[0]);
+        return `<table>
+          <thead>
+            <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
+          </thead>
+          <tbody>
+            ${data.map(row => `
+              <tr>${headers.map(h => `<td>${row[h]}</td>`).join('')}</tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+      }
+  
+      return `<ul>${data.map(item => `<li>${item}</li>`).join('')}</ul>`;
+    }
+  </script>
+   -->
+   <!DOCTYPE html>
+   <html lang="en">
+   <head>
+     <meta charset="UTF-8">
+     <title>Smart Parking Dashboard</title>
+     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+   </head>
+   <body class="home-bg">
+     <div class="container">
+       <h1 class="title">🚗 Smart Parking Dashboard</h1>
+       <div class="home-buttons">
+         <a href="/revenue" class="home-btn">Revenue</a>
+         <a href="/parking-info" class="home-btn">Parking Info</a>
+         <a href="/lost-found" class="home-btn">Lost & Found</a>
+       </div>
+     </div>
+   </body>
+   </html>
+   
