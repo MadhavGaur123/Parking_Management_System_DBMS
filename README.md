@@ -168,6 +168,4 @@ The app will start in debug mode at `http://127.0.0.1:5000/`.
 
 Contributions, issues, and feature suggestions are welcome! Feel free to fork the repo and open a pull request.
 
-## 📄 License
 
-No license has been specified yet for this repository. Consider adding one (e.g. MIT) if you'd like others to freely use or contribute to this project.
